@@ -155,5 +155,5 @@ module.exports = {
     getCommunity,
     getCommunities,
     getSubCommunities,
-    getPosts
+    getPosts,
 }
