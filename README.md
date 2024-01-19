@@ -3,7 +3,8 @@
 Expects 2-3 json files depending on the useDevMode variable in database_con.js
 If useDevMode is true, it attempts to read "database_config.dev.json", else it attempts to read "database_config.json"
 
-The structure of both of those files is:
+### JSON Structures
+database_config.json/database_config.dev.json:
 ```json
 {
     "database_host" : "127.0.0.1",
@@ -13,7 +14,7 @@ The structure of both of those files is:
 }
 ```
 
-It also expects an endpoints.json file, with this structure:
+endpoints.json:
 ```json
 {
     "host_url" : "api.example.com",
