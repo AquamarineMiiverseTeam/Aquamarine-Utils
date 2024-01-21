@@ -5,6 +5,14 @@ const util = require('util')
 const con = require('./database_con');
 const query = util.promisify(con.query).bind(con);
 
+const fs = require('fs')
+
+const pako = require(process.cwd() + '/node_modules/pako')
+const TGA = require(process.cwd() + '/node_modules/tga')
+const PNG = require(process.cwd() + '/node_modules/pngjs').PNG
+const BMP = require(process.cwd() + '/node_modules/bmp-js')
+const JIMP = require(process.cwd() + '/node_modules/jimp');
+
 //This is a utility object to get certain things about an account, or create certain things.
 const utility = {
     notification : {
@@ -28,6 +36,18 @@ const utility = {
     empathy : {
         getAccountEmpathiesGiven : async function getAccountEmpathiesGiven(account) {
             return await query("SELECT * FROM empathies WHERE account_id=?", account[0].id)
+        }
+    },
+
+    wwp : {
+        encodeIcon : async function encodeicon(id) {
+            const jpg_icon = fs.readFileSync(__dirname + "/../CDN_Files/img/icons/1.jpg");
+            
+            JIMP.read(__dirname + "/../CDN_Files/img/icons/1.jpg", async (err, image) => {
+                const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+
+                return Buffer.from(pako.deflate(tga)).toString("base64")
+            })
         }
     }
 }
