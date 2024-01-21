@@ -3,6 +3,7 @@
 const pako = require(process.cwd() + '/node_modules/pako')
 const TGA = require(process.cwd() + '/node_modules/tga')
 const PNG = require(process.cwd() + '/node_modules/pngjs').PNG
+const BMP = require(process.cwd() + '/node_modules/bmp-js')
 const zlib = require('zlib')
 
 const jpegLib = require(process.cwd() + '/node_modules/jpeg-js')
@@ -24,7 +25,7 @@ function decodeParamPack(input) {
     return out;
 }
 
-function paintingProccess(painting) {
+function paintingProccess(painting, platform) {
     let paintingBuffer = Buffer.from(painting, 'base64');
     let output = '';
     try {
@@ -33,14 +34,30 @@ function paintingProccess(painting) {
     catch (err) {
         console.error(err);
     }
-    let tga = new TGA(Buffer.from(output));
-    let png = new PNG({
-        width: tga.width,
-        height: tga.height
-    });
-    png.data = tga.pixels;
-    let pngBuffer = PNG.sync.write(png);
-    return `${pngBuffer.toString('base64')}`;
+    if (output[0] === 66) {
+		const bitmap = BMP.decode(Buffer.from(output));
+		const png = new PNG({
+			width: bitmap.width,
+			height: bitmap.height
+		});
+
+		const bpmBuffer = bitmap.getData();
+		bpmBuffer.swap32();
+		png.data = bpmBuffer;
+		for (let i = 3; i < bpmBuffer.length; i += 4) {
+			bpmBuffer[i] = 255;
+		}
+		return PNG.sync.write(png);
+	} else {
+		const tga = new TGA(Buffer.from(output));
+		const png = new PNG({
+			width: tga.width,
+			height: tga.height
+		});
+
+		png.data = Buffer.from(tga.pixels);
+		return PNG.sync.write(png);
+	}
 }
 
 function decodeIcon(icon) {

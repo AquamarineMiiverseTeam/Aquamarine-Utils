@@ -39,10 +39,9 @@ async function getAccounts(order_by, limit) {
 async function getCommunity(community_id, req) {
     const sql = `SELECT * FROM communities WHERE id=?`
     const communities = (await query(sql, community_id))[0];
+    communities.sub_communities = await query("SELECT * FROM communities WHERE parent_community_id=?", community_id)
     communities.favorites = (await query("SELECT * FROM favorites WHERE community_id=?", community_id)).length
     const favorited = (await query("SELECT * FROM favorites WHERE community_id=? AND account_id=?", [communities.id, req.account[0].id]))
-
-    console.log(favorited.length)
 
     if (favorited.length == 1) {communities.is_favorited = 1;} else {communities.is_favorited = 0}
 

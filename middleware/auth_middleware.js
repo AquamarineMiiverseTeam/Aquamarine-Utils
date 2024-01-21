@@ -2,7 +2,7 @@ const colors = require(process.cwd() + '/node_modules/colors');
 const moment = require(process.cwd() + '/node_modules/moment');
 const util = require('util')
 
-const con = require('./database_con');
+const con = require('../database_con');
 const query = util.promisify(con.query).bind(con);
 
 const strict_mode = true;
@@ -30,6 +30,7 @@ async function auth(req, res, next) {
 
     //Grabbing the correct service token
     var sql;
+    //console.log(req.service_token)
     switch (parseInt(req.param_pack.platform_id)) {
         case 0:
             sql = "SELECT * FROM accounts WHERE 3ds_service_token = ?";
