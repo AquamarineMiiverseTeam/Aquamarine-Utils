@@ -19,7 +19,7 @@ const utility = {
         createNewNotification : async function createNewNotification(account, from_account_id, type, image_url, content, content_id) {
             //from_account_id should be 0 if the notification was sent by bot or admin.
             await query("INSERT INTO notifications (account_id, type, image_url, content, content_id, from_account_id) VALUES(?,?,?,?,?,?)",
-            [account[0].id, type, image_url, content, content_id, from_account_id])
+            [account, type, image_url, content, content_id, from_account_id])
     
             console.log("[INFO] (%s) Created New Notification!".blue, moment().format("HH:mm:ss"));
         },
@@ -40,14 +40,17 @@ const utility = {
     },
 
     wwp : {
-        encodeIcon : async function encodeicon(id) {
-            const jpg_icon = fs.readFileSync(__dirname + "/../CDN_Files/img/icons/1.jpg");
-            
-            JIMP.read(__dirname + "/../CDN_Files/img/icons/1.jpg", async (err, image) => {
-                const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+        encodeIcon : function encodeicon(id) {
+            console.log(id)
 
-                return Buffer.from(pako.deflate(tga)).toString("base64")
-            })
+            return new Promise((resolve, reject) => {
+                JIMP.read(__dirname + `/../CDN_Files/img/icons/${id}.jpg`).then((image, err) => {
+                    if (err) {reject()}
+                    const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+    
+                    resolve(Buffer.from(pako.deflate(tga)).toString("base64"))
+                })
+            });
         }
     }
 }

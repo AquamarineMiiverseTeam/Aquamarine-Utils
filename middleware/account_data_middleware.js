@@ -11,6 +11,7 @@ async function getAccountData(req, res, next) {
     //This middleware is meant for getting all extra account data that may be used in places such as
     //the navbar, and other UI elements
     if (req.path.includes("img") || req.path.includes("css") || req.path.includes("js")) { next(); return; }
+    if (!req.account) { next(); return; }
 
     req.account.all_notifications = await common.notification.getAccountAllNotifications(req.account);
     req.account.unread_notifications = await common.notification.getAccountUnreadNotifications(req.account);
