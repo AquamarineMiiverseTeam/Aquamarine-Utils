@@ -16,8 +16,6 @@ async function getAccountData(req, res, next) {
     req.account.unread_notifications = await common.notification.getAccountUnreadNotifications(req.account);
     req.account.empathies_given = await common.empathy.getAccountEmpathiesGiven(req.account);
 
-    console.log(req.account)
-
     next();
 }
 
