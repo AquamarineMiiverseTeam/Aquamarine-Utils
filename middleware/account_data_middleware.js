@@ -12,4 +12,6 @@ async function getAccountData(req, res, next) {
 
     req.account.all_notifications = await common.notification.getAccountAllNotifications(req.account);
     req.account.unread_notifications = await common.notification.getAccountUnreadNotifications(req.account);
+
+    next();
 }
