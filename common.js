@@ -46,6 +46,10 @@ const utility = {
             return new Promise((resolve, reject) => {
                 JIMP.read(__dirname + `/../CDN_Files/img/icons/${id}.jpg`).then((image, err) => {
                     if (err) {reject()}
+                    
+                    //Making sure every icon is the correct resolution.
+                    image.resize(128, 128);
+
                     const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
     
                     resolve(Buffer.from(pako.deflate(tga)).toString("base64"))
