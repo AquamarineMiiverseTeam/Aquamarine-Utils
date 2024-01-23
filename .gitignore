@@ -1,3 +1,5 @@
 database_config.dev.json
 database_config.json
+discord_config.json
 endpoints.json
+node_modules
