@@ -15,46 +15,74 @@ const JIMP = require(process.cwd() + '/node_modules/jimp');
 
 //This is a utility object to get certain things about an account, or create certain things.
 const utility = {
-    notification : {
-        createNewNotification : async function createNewNotification(account, from_account_id, type, image_url, content, content_id) {
+    notification: {
+        createNewNotification: async function createNewNotification(account, from_account_id, type, image_url, content, content_id) {
             //from_account_id should be 0 if the notification was sent by bot or admin.
             await query("INSERT INTO notifications (account_id, type, image_url, content, content_id, from_account_id) VALUES(?,?,?,?,?,?)",
-            [account, type, image_url, content, content_id, from_account_id])
-    
+                [account, type, image_url, content, content_id, from_account_id])
+
             console.log("[INFO] (%s) Created New Notification!".blue, moment().format("HH:mm:ss"));
         },
 
-        getAccountUnreadNotifications : async function getAccountUnreadNotifications(account) {
+        getAccountUnreadNotifications: async function getAccountUnreadNotifications(account) {
             return await query("SELECT * FROM notifications WHERE account_id=? AND read_notif=0", account[0].id)
         },
 
-        getAccountAllNotifications : async function getAccountAllNotifications(account) {
+        getAccountAllNotifications: async function getAccountAllNotifications(account) {
             return await query("SELECT * FROM notifications WHERE account_id=?", account[0].id)
         }
     },
 
-    empathy : {
-        getAccountEmpathiesGiven : async function getAccountEmpathiesGiven(account) {
+    empathy: {
+        getAccountEmpathiesGiven: async function getAccountEmpathiesGiven(account) {
             return await query("SELECT * FROM empathies WHERE account_id=?", account[0].id)
         }
     },
 
-    wwp : {
-        encodeIcon : function encodeicon(id) {
+    wwp: {
+        encodeIcon: function encodeicon(id) {
             console.log(id)
 
             return new Promise((resolve, reject) => {
-                JIMP.read(__dirname + `/../CDN_Files/img/icons/${id}.jpg`).then((image, err) => {
-                    if (err) {reject()}
-                    
-                    //Making sure every icon is the correct resolution.
-                    image.resize(128, 128);
-
-                    const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+                try {
+                    JIMP.read(__dirname + `/../CDN_Files/img/icons/${id}.jpg`).then((image, err) => {
+                        if (err) { reject() }
     
-                    resolve(Buffer.from(pako.deflate(tga)).toString("base64"))
-                })
+                        //Making sure every icon is the correct resolution.
+                        image.resize(128, 128);
+    
+                        const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+    
+                        resolve(Buffer.from(pako.deflate(tga)).toString("base64"))
+                    })
+                }
+                catch {
+                    JIMP.read(__dirname + `/../CDN_Files/img/icons/default.jpg`).then((image, err) => {
+                        if (err) { reject() }
+    
+                        const tga = TGA.createTgaBuffer(image.bitmap.width, image.bitmap.height, image.bitmap.data)
+    
+                        resolve(Buffer.from(pako.deflate(tga)).toString("base64"))
+                    })
+                }
             });
+        },
+
+        decodeIcon: async function decodeIcon(icon) {
+            let buffer = Buffer.from(icon, 'base64');
+            let output = '';
+            try {
+                output = pako.inflate(buffer);
+            }
+            catch (err) {
+                console.error(err);
+            }
+            const tga = new TGA(Buffer.from(output));
+
+            const new_jpg = await new JIMP(tga.width, tga.height);
+            new_jpg.bitmap.data = tga.pixels;
+
+            return new_jpg.getBase64Async("image/jpeg")
         }
     }
 }

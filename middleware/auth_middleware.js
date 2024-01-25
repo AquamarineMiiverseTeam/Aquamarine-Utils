@@ -47,13 +47,13 @@ async function auth(req, res, next) {
     var account = await query(sql, service_token);
 
     //If there is no account AND the request isn't creating an account, then send a 401 (Unauthorized)
-    if (account.length == 0 && !req.path.includes("account") && !req.path.includes("people")) { res.redirect("/account/create_account"); return; }
+    if (!account[0] && !req.path.includes("account") && !req.path.includes("people")) { res.redirect("/account/create_account"); return; }
     if (req.path.includes("account") || req.path.includes("people")) {next(); return;}
 
     //Finally, set the requests account to be the newly found account from the database
     req.account = account;
 
-    if (strict_mode && account[0].admin == 0) {res.sendStatus(403); return;}
+    if (req.account[0].admin != 1 && req.account[0].tester != 1 && strict_mode) {res.sendStatus(403); return;}
 
     next();
 }

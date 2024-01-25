@@ -1,0 +1,23 @@
+{
+  "name": "aquamarine-utils",
+  "version": "1.0.0",
+  "description": "Expects 2-3 json files depending on the useDevMode variable in database_con.js If useDevMode is true, it attempts to read \"database_config.dev.json\", else it attempts to read \"database_config.json\"",
+  "main": "common.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AquamarineMiiverseTeam/Aquamarine-Utils.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AquamarineMiiverseTeam/Aquamarine-Utils/issues"
+  },
+  "homepage": "https://github.com/AquamarineMiiverseTeam/Aquamarine-Utils#readme",
+  "dependencies": {
+    "axios": "^1.6.5"
+  }
+}

@@ -39,7 +39,7 @@ async function getAccounts(order_by, limit) {
 async function getCommunity(community_id, req) {
     const sql = `SELECT * FROM communities WHERE id=?`
     const communities = (await query(sql, community_id))[0];
-    communities.sub_communities = await query("SELECT * FROM communities WHERE parent_community_id=?", community_id)
+    communities.sub_communities = await getSubCommunities(community_id, "desc", null)
     communities.favorites = (await query("SELECT * FROM favorites WHERE community_id=?", community_id)).length
     const favorited = (await query("SELECT * FROM favorites WHERE community_id=? AND account_id=?", [communities.id, req.account[0].id]))
 
@@ -66,7 +66,11 @@ async function getCommunities(order_by, limit, type, offset, special) {
     const communities = await query(sql);
 
     for (let i = 0; i < communities.length; i++) {
-        communities[i].favorites = (await query("SELECT * FROM favorites WHERE community_id=?", communities[i].id)).length
+        communities[i].favorites = (await query("SELECT * FROM favorites WHERE community_id=?", communities[i].id)).length;
+
+        if (communities[i].user_community == 1) {
+            communities[i].mii_hash = (await query("SELECT mii_hash FROM accounts WHERE id=?", communities[i].account_id))[0].mii_hash;
+        }
     }
 
     return communities;
@@ -87,6 +91,12 @@ async function getSubCommunities(parent_community_id, order_by, limit) {
     const sql = `SELECT * FROM communities ${sql_com_id} ${sql_order_by} ${sql_limit}`
     const communities = await query(sql);
 
+    for (let i = 0; i < communities.length; i++) {
+        if (communities[i].user_community == 1) {
+            communities[i].mii_hash = (await query("SELECT mii_hash FROM accounts WHERE id=?", communities[i].account_id))[0].mii_hash;
+        }
+    }
+
     return communities;
 }
 
@@ -100,7 +110,7 @@ async function getSubCommunities(parent_community_id, order_by, limit) {
     * @returns {Array[]} Post Data
 */
 async function getPosts(community_id, order_by, limit, topic_tag, offset, req) {
-    var sql_com_id = (community_id) ? `WHERE community_id=${community_id}` : ``;
+    var sql_com_id = (community_id) ? `WHERE community_id=${community_id}` : `WHERE community_id=0`;
     var sql_order_by = (order_by == "desc" || order_by == "asc") ? `ORDER BY create_time ${order_by}` : ``;
     var sql_limit = (limit) ? `LIMIT ${limit}` : ``;
     var sql_topic_tag = (topic_tag) ? `AND topic_tag='${topic_tag}'` : ``;
