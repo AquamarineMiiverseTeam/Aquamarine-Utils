@@ -260,7 +260,7 @@ const utility = {
 
     wwp: {
         encodeIcon: async function (id) {
-            console.log(id)
+            logger.info(`Encoding ZLIB icon for community ID: ${id}`)
 
             return new Promise((resolve, reject) => {
                 try {
