@@ -8,8 +8,11 @@ const TGA = require(process.cwd() + '/node_modules/tga')
 const PNG = require(process.cwd() + '/node_modules/pngjs').PNG
 const BMP = require(process.cwd() + '/node_modules/bmp-js')
 const JIMP = require(process.cwd() + '/node_modules/jimp');
+const logger = require(process.cwd() + '/middleware/log')
 
-const code_2_country = require("./code_2_country.json")
+const code_2_country = require("./code_2_country.json");
+
+const db_con = require("./database_con");
 
 //This is a utility object to get certain things about an account, or create certain things.
 const utility = {
@@ -191,12 +194,21 @@ const utility = {
         }
     },
     notification: {
-        createNewNotification: async function (account, from_account_id, type, image_url, content, content_id, linkto) {
+        createNewNotification: async function (account_id, from_account_id, type, image_url, content, content_id, linkto) {
             //from_account_id should be 0 if the notification was sent by bot or admin.
-            await query("INSERT INTO notifications (account_id, type, image_url, content, content_id, from_account_id, linkto) VALUES(?,?,?,?,?,?,?)",
-                [account, type, image_url, content, content_id, from_account_id, linkto])
+            await db_con("notifications").insert(
+                {
+                    account_id : account_id, 
+                    from_account_id : from_account_id,
+                    type : type, 
+                    image_url : image_url,
+                    content : content,
+                    content_id : content_id,
+                    linkto : linkto
+                }
+            )
 
-            console.log("[INFO] (%s) Created New Notification!".blue, moment().format("HH:mm:ss"));
+            logger.info("Created new notification!")
         },
 
         getAccountUnreadNotifications: async function (account) {
