@@ -15,6 +15,19 @@ async function getAccount(account_id) {
     return account;
 }
 
+/** 
+    * Used for grabbing a single account
+    * @param {Number} account_pid The account PID to grab.
+    * @returns {Object} Community Data
+*/
+async function getAccountByPid(account_pid) {
+    const sql = `SELECT * FROM accounts WHERE pid=?`
+    const account = (await query(sql, account_pid))[0];
+
+    return account;
+}
+
+
 /**
     * Used for grabbing all accounts in the current database
     * @param {String} order_by "desc", "asc"
@@ -95,6 +108,8 @@ async function getSubCommunities(parent_community_id, order_by, limit) {
         if (communities[i].user_community == 1) {
             communities[i].mii_hash = (await query("SELECT mii_hash FROM accounts WHERE id=?", communities[i].account_id))[0].mii_hash;
         }
+
+        communities[i].favorites = (await query("SELECT * FROM favorites WHERE community_id=?", communities[i].id)).length
     }
 
     return communities;
@@ -121,6 +136,7 @@ async function getPosts(community_id, order_by, limit, topic_tag, offset, req) {
 
     for (let i = 0; i < posts.length; i++) {
         const account = (await query("SELECT * FROM accounts WHERE id=?", posts[i].account_id))[0];
+
         var mii_face;
 
         switch (posts[i].feeling_id) {
@@ -160,6 +176,7 @@ async function getPosts(community_id, order_by, limit, topic_tag, offset, req) {
 
 module.exports = {
     getAccount,
+    getAccountByPid,
     getAccounts,
     getCommunity,
     getCommunities,

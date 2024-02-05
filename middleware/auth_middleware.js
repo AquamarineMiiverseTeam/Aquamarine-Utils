@@ -1,14 +1,11 @@
 const colors = require(process.cwd() + '/node_modules/colors');
 const moment = require(process.cwd() + '/node_modules/moment');
-const util = require('util')
-
-const con = require('../database_con');
-const query = util.promisify(con.query).bind(con);
+const db_con = require("../database_con")
 
 const strict_mode = true;
 
 async function auth(req, res, next) {
-    if (req.path.includes("img") || req.path.includes("css") || req.path.includes("js")) { next(); return; }
+    if (req.path.includes("img") || req.path.includes("css") || req.path.includes("js") || (req.path.includes("v1") && req.path.includes("users"))) { next(); return; }
 
     //Assigning variables
     var param_pack = req.get('x-nintendo-parampack');
@@ -28,23 +25,21 @@ async function auth(req, res, next) {
         req.param_pack[base64Result[i].trim()] = base64Result[i + 1].trim();
     }
 
-    //Grabbing the correct service token
-    var sql;
-    //console.log(req.service_token)
+    //Grabbing the correct account
+    var account;
     switch (parseInt(req.param_pack.platform_id)) {
         case 0:
-            sql = "SELECT * FROM accounts WHERE 3ds_service_token = ?";
             req.platform = "3ds";
+            account = await db_con.select("*").from("accounts").where({"3ds_service_token" : service_token});
             break;
         case 1:
         default:
-            sql = "SELECT * FROM accounts WHERE wiiu_service_token = ?";
             req.platform = "wiiu";
+            account = await db_con.select("*").from("accounts").where({wiiu_service_token : service_token});
             break;
     }
 
     //Grabbing account from database
-    var account = await query(sql, service_token);
 
     //If there is no account AND the request isn't creating an account, then send a 401 (Unauthorized)
     if (!account[0] && !req.path.includes("account") && !req.path.includes("people")) { res.redirect("/account/create_account"); return; }
@@ -53,7 +48,13 @@ async function auth(req, res, next) {
     //Finally, set the requests account to be the newly found account from the database
     req.account = account;
 
-    if (req.account[0].admin != 1 && req.account[0].tester != 1 && strict_mode) {res.sendStatus(403); return;}
+    if (req.account[0].tester != 1 && strict_mode) {
+        if (req.path.includes("v1")) {res.sendStatus(403); return;} else {
+            res.render("pages/error/error_tester")
+        }
+
+        return;
+    }
 
     next();
 }
