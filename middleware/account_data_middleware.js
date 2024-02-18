@@ -1,11 +1,8 @@
 const colors = require(process.cwd() + '/node_modules/colors');
 const moment = require(process.cwd() + '/node_modules/moment');
 
-const con = require('../database_con');
-const util = require('util')
-const query = util.promisify(con.query).bind(con);
-
 const common = require("../common")
+const db_con = require("../database_con")
 
 async function getAccountData(req, res, next) {
     //This middleware is meant for getting all extra account data that may be used in places such as
@@ -16,6 +13,7 @@ async function getAccountData(req, res, next) {
     req.account.all_notifications = await common.notification.getAccountAllNotifications(req.account);
     req.account.unread_notifications = await common.notification.getAccountUnreadNotifications(req.account);
     req.account.empathies_given = await common.empathy.getAccountEmpathiesGiven(req.account);
+    req.account.favorites = await db_con("favorites").where({account_id : req.account[0].id})
 
     next();
 }

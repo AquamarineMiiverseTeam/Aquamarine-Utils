@@ -47,7 +47,7 @@ async function getAccounts(order_by, limit) {
     * Used for grabbing a single community
     * @param {Number} community_id The community ID to grab.
     * @param {Express.Request} req The current request, needed for empathy data.
-    * @returns {Object} Community Data
+    * @returns {Promise<Object>} Community Data
 */
 async function getCommunity(community_id, req) {
     const sql = `SELECT * FROM communities WHERE id=?`
@@ -121,8 +121,9 @@ async function getSubCommunities(parent_community_id, order_by, limit) {
     * @param {String} order_by "desc", "asc"
     * @param {Number} limit Can be any integer.
     * @param {String} topic_tag Can be any string, will grab posts only with this specific topic_tag
+    * @param {Number} offset The offset of the posts to grab
     * @param {Express.Request} req The current request, needed for empathy data.
-    * @returns {Array[]} Post Data
+    * @returns {Promise<Array[]>} Post Data
 */
 async function getPosts(community_id, order_by, limit, topic_tag, offset, req) {
     var sql_com_id = (community_id) ? `WHERE community_id=${community_id}` : `WHERE community_id=0`;

@@ -4,6 +4,8 @@ const db_con = require("../database_con")
 
 const strict_mode = true;
 
+const common = require("../common")
+
 async function auth(req, res, next) {
     if (req.path.includes("img") || req.path.includes("css") || req.path.includes("js") || (req.path.includes("v1") && req.path.includes("users"))) { next(); return; }
 
@@ -43,10 +45,14 @@ async function auth(req, res, next) {
 
     //If there is no account AND the request isn't creating an account, then send a 401 (Unauthorized)
     if (!account[0] && !req.path.includes("account") && !req.path.includes("people")) { res.redirect("/account/create_account"); return; }
-    if (req.path.includes("account") || req.path.includes("people")) {next(); return;}
+    if (req.path.includes("account") || (req.path.includes("people") && !req.path.includes("people/update"))) {next(); return;}
 
     //Finally, set the requests account to be the newly found account from the database
     req.account = account;
+
+    req.account.all_notifications = []
+    req.account.unread_notifications = []
+    req.account.empathies_given = []
 
     if (req.account[0].tester != 1 && strict_mode) {
         if (req.path.includes("v1")) {res.sendStatus(403); return;} else {

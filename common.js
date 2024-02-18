@@ -52,41 +52,69 @@ const utility = {
         }
     },
     ui: {
+        getCommunities: async function(type, platform, orderBy, special, limit, offset) {
+            let communities = await db_con("communities")
+                .where(function() {
+                    if (type) { this.where({type : type}) }
+                    if (platform) { this.where({platform : platform}) }
+                    if (special) { this.where({special_community : special}) }
+                })
+                .orderBy("create_time", orderBy)
+                .limit(limit)
+                .offset(offset)
+            communities = await fillCommunityData(communities);
+
+            return communities
+        },
+
+        getCommunity : async function(community_id) {
+            let communities = (await db_con("communities").where({id : community_id}));
+
+            communities = await fillCommunityData(communities);
+
+            return communities;
+        },
+
         getPopularCommunities: async function (limit) {
-            const communities = await query(`SELECT * FROM communities AS c
-            ORDER BY 
-            (SELECT COUNT(community_id) FROM posts WHERE community_id=c.id AND create_time BETWEEN '${moment().subtract(5, "days").format("YYYY-MM-DD HH:mm:ss")}' AND '${moment().add(1, "day").format("YYYY-MM-DD HH:mm:ss")}')
-            DESC LIMIT ${limit}`)
+            let communities = await db_con
+                                    .select("*")
+                                    .from("communities AS c")
+                                    .where({platform : "wiiu", type : "main"})
+                                    .orderBy(function() {
+                                                this.count("community_id")
+                                                    .from("posts")
+                                                    .whereRaw("community_id = `c`.id")
+                                                    .whereBetween("create_time",
+                                                                [moment().subtract(5, "days").format("YYYY-MM-DD HH:mm:ss"),
+                                                                moment().add(1, "day").format("YYYY-MM-DD HH:mm:ss")]
+                                                                )
+                                            }, "desc")
+                                    .limit(limit)
 
-            for (let i = 0; i < communities.length; i++) {
-                communities[i].favorites = (await query("SELECT * FROM favorites WHERE community_id=?", communities[i].id)).length;
-
-                if (communities[i].user_community == 1) {
-                    communities[i].mii_hash = (await query("SELECT mii_hash FROM accounts WHERE id=?", communities[i].account_id))[0].mii_hash;
-                }``
-            }
+            communities = await fillCommunityData(communities);
 
             return communities;
         },
 
         getNewCommunities: async function (limit) {
-            const communities = await query(`SELECT * FROM communities ORDER BY create_time DESC LIMIT ?`, limit);
+            let communities = await db_con
+                                      .select("*")
+                                      .from("communities")
+                                      .orderBy("create_time", "desc")
+                                      .limit(limit);
 
-            for (let i = 0; i < communities.length; i++) {
-                communities[i].favorites = (await query("SELECT * FROM favorites WHERE community_id=?", communities[i].id)).length;
-
-                if (communities[i].user_community == 1) {
-                    communities[i].mii_hash = (await query("SELECT mii_hash FROM accounts WHERE id=?", communities[i].account_id))[0].mii_hash;
-                }``
-            }
+            communities = await fillCommunityData(communities);
 
             return communities
         },
 
         getCommunityByDecimalTitleID: async function (tid) {
-            const community = await query(`SELECT * FROM communities WHERE title_ids LIKE "%?%" AND type="main"`, parseInt(tid));
+            const community = (await db_con("communities")
+                                            .whereLike("title_ids", `%${Number(tid)}%`)
+                                            .where({type : "main"})
+                                            .limit(1))[0];
 
-            return community
+            return community;
         },
 
         getTypedPosts: async function (type, community_id, offset, limit) {
@@ -194,17 +222,16 @@ const utility = {
         }
     },
     notification: {
-        createNewNotification: async function (account_id, from_account_id, type, image_url, content, content_id, linkto) {
+        createNewNotification: async function (account_id, from_account_id, type, content_id, linkto, post_id) {
             //from_account_id should be 0 if the notification was sent by bot or admin.
             await db_con("notifications").insert(
                 {
                     account_id : account_id, 
                     from_account_id : from_account_id,
                     type : type, 
-                    image_url : image_url,
-                    content : content,
                     content_id : content_id,
-                    linkto : linkto
+                    linkto : linkto,
+                    post_id : post_id
                 }
             )
 
@@ -212,18 +239,18 @@ const utility = {
         },
 
         getAccountUnreadNotifications: async function (account) {
-            return await query("SELECT * FROM notifications WHERE account_id=? AND read_notif=0", account[0].id)
+            return await db_con("notifications").where({account_id : account[0].id, read : 0}).orderBy("create_time", "desc")
         },
 
         getAccountAllNotifications: async function (account) {
-            const notifications = await query("SELECT * FROM notifications WHERE account_id=? ORDER BY create_time DESC", account[0].id);
+            const notifications = await db_con("notifications").where({account_id : account[0].id}).orderBy("create_time", "desc")
 
             for (let i = 0; i < notifications.length; i++) {
-                notifications[i].from_account = (await query("SELECT * FROM accounts WHERE id=?", notifications[i].from_account_id))[0]
+                notifications[i].from_account = (await db_con("accounts").where({id : notifications[i].from_account_id}))[0]
 
                 switch (notifications[i].type) {
                     case "yeah":
-                        const post = (await query("SELECT * FROM posts WHERE id=?", notifications[i].linkto.slice(7)))[0];
+                        const post = (await db_con("posts").where({id : notifications[i].linkto.slice(7)}))[0]
 
                         if (post.body) {
                             notifications[i].secondary = `your post (${post.body.slice(0, 25)}..)`
@@ -242,7 +269,7 @@ const utility = {
         },
 
         readAccountNotifications: async function (account) {
-            await query("UPDATE notifications SET read_notif=1 WHERE account_id=?", account[0].id)
+            await db_con("notifications").where({account_id : account[0].id}).update({read_notif : 1})
 
             return true;
         }
@@ -250,7 +277,7 @@ const utility = {
 
     empathy: {
         getAccountEmpathiesGiven: async function (account) {
-            return await query("SELECT * FROM empathies WHERE account_id=?", account[0].id)
+            return await db_con("empathies").where({account_id : account[0].id})
         },
 
         getPostEmpathies: async function (post_id) {
@@ -304,6 +331,28 @@ const utility = {
             return new_jpg.getBase64Async("image/jpeg")
         }
     }
+}
+
+async function fillCommunityData(communities) {
+    for (let i = 0; i < communities.length; i++) {
+        communities[i].favorites = (await db_con
+                                          .select("*")
+                                          .from("favorites")
+                                          .where({community_id: communities[i].id})
+                                   );
+
+        if (communities[i].user_community == 1) {
+            communities[i].mii_hash = (await db_con
+                                             .select("mii_hash")
+                                             .from("accounts")
+                                             .where({id: communities[i].account_id})
+                                      )[0].mii_hash;
+        }
+
+        communities[i].sub_communities = await db_con("communities").where({parent_community_id : communities[i].id})
+    }
+
+    return communities;
 }
 
 module.exports = utility
