@@ -252,6 +252,8 @@ const utility = {
                     case "yeah":
                         const post = (await db_con("posts").where({id : notifications[i].linkto.slice(7)}))[0]
 
+                        if (!post) { return; }
+
                         if (post.body) {
                             notifications[i].secondary = `your post (${post.body.slice(0, 25)}..)`
                         } else {
